@@ -319,6 +319,15 @@ class MessageDisplay{
   }
 }
 
+let turnNum = 0;
+
+const ASSETS = {
+  image:{
+    'arrowRed':"./assets/yajirushiRed_top.png",
+    'arrowBlue':"./assets/yajirushiBlue_top.png"
+  },
+}
+
 phina.define('MainScene', {
   superClass: 'DisplayScene',
   init: function(option) {
@@ -340,7 +349,7 @@ phina.define('MainScene', {
       () => this.cursor.setIndex(this.cursor.px,this.cursor.py+1), // down
       () => this.cursor.setIndex(this.cursor.px+1,this.cursor.py), // right
       () => this.cursor.setIndex(this.cursor.px-1,this.cursor.py), // left
-      helloFunc, // a
+      () => putArrow(this,this.board.getPositionOfSquare(this.cursor.px,this.cursor.py),this.board.calcOneSquareLong()-30,(turnNum % 2 ? "red":"blue")), // a
       helloFunc // b
     );
 
@@ -350,7 +359,6 @@ phina.define('MainScene', {
       this.cursor.setIndex(px,py);
     };
     
-    this.messageDis = new MessageDisplay(this,"center");
   },
 
   update: function(app){
@@ -367,10 +375,22 @@ phina.main(function() {
   var app = GameApp({
     startLabel: 'main',
     width:SCREEN_WIDTH,
-    height:SCREEN_HEIGHT
+    height:SCREEN_HEIGHT,
+    assets:ASSETS,
   });
   app.run();
 });
+
+function putArrow(_sceneSelf,_pos,_size,_type){
+  let arrowSprite;
+  if(_type == "red") arrowSprite = Sprite("arrowRed");
+  else if(_type == "blue") arrowSprite = Sprite("arrowBlue");
+  else{
+    console.error("存在しない矢印のタイプです");
+  }
+  arrowSprite.addChildTo(_sceneSelf).setPosition(_pos[0],_pos[1]).setSize(_size,_size);
+  turnNum++;
+}
 
 function helloFunc(){
   console.log("hello");

@@ -36,8 +36,8 @@ class Board{
   // 情報の形式
   // マス目の分だけ文字の要素を持った二次元配列
   // 何もない→""(空文字)
-  // 矢印がおいてある "(type)(direction)" type -> 0 or 1 direction -> u(上) l(左) r(右) d(下) ru(右上) lu(左上) rd(右下) ld(左下)
-  // ex: "0u", "1ld", ""
+  // 矢印がおいてある "(type)(direction)" type -> 0 or 1 direction -> u(上) l(左) r(右) d(下) ur(右上) ul(左上) dr(右下) dl(左下)
+  // ex: "0u", "1dl", ""
   
 
   constructor(_sceneSelf,{_width=DEFAULT_BOARD_WIDTH,_height=DEFAULT_BOARD_HEIGHT,_boardColor="white",_divideLineColor="black",_divideNum=DEFAULT_BOARD_DIVIDENUM,_divideLineWidth=DEFAULT_BOARD_DIVIDELINE_WIDTH}){
@@ -212,11 +212,15 @@ class Controller{
   left;
   right;
   down;
+  upRight;
+  upLeft;
+  downRight;
+  downLeft;
   a;
   b;
   buttons = [this.up,this.down,this.right,this.left,this.a,this.b];
 
-  constructor(_sceneSelf,_upFunc,_downFunc,_rightFunc,_leftFunc,_aFunc,_bFunc){
+  constructor(_sceneSelf,_upFunc,_downFunc,_rightFunc,_leftFunc,_upRightFunc,_upLeftFunc,_downRightFunc,_downLeftFunc,_aFunc,_bFunc){
     this.up = TriangleShape({
       radius:64,
       fill:"black",
@@ -225,8 +229,7 @@ class Controller{
 
     this.left = TriangleShape({
       radius:64,
-     
- fill:"black",
+      fill:"black",
       stroke:"white",
     }).addChildTo(_sceneSelf).setPosition(200-100,_sceneSelf.gridY.center()+100).setRotation(-90);
 
@@ -241,6 +244,31 @@ class Controller{
       fill:"black",
       stroke:"white",
     }).addChildTo(_sceneSelf).setPosition(200,_sceneSelf.gridY.center()+200).setRotation(180);
+
+    this.upRight = TriangleShape({
+      radius:32,
+      fill:"black",
+      stroke:"white",
+    }).addChildTo(_sceneSelf).setPosition(200+100,_sceneSelf.gridY.center()).setRotation(45);
+
+    this.upLeft = TriangleShape({
+      radius:32,
+      fill:"black",
+      stroke:"white",
+    }).addChildTo(_sceneSelf).setPosition(200-100,_sceneSelf.gridY.center()).setRotation(-45);
+
+    this.downRight = TriangleShape({
+      radius:32,
+      fill:"black",
+      stroke:"white",
+    }).addChildTo(_sceneSelf).setPosition(200+100,_sceneSelf.gridY.center()+200).setRotation(135);
+
+    this.downLeft = TriangleShape({
+      radius:32,
+      fill:"black",
+      stroke:"white",
+    }).addChildTo(_sceneSelf).setPosition(200-100,_sceneSelf.gridY.center()+200).setRotation(-135);
+
 
     this.a = CircleShape({
       radius:64,
@@ -268,8 +296,13 @@ class Controller{
       fontFamily:"DotAyu18",
     }).addChildTo(_sceneSelf).setPosition(1600-200 -64, _sceneSelf.gridY.center()+50 +150);
 
-    this.buttons = [this.up,this.down,this.right,this.left,this.a,this.b];
-    this.funcs = [_upFunc,_downFunc,_rightFunc,_leftFunc,_aFunc,_bFunc];
+    this.upRight.hide();
+    this.upLeft.hide();
+    this.downRight.hide();
+    this.downLeft.hide();
+
+    this.buttons = [this.up,this.down,this.right,this.left,this.a,this.b,this.upRight,this.upLeft,this.downRight,this.downLeft];
+    this.funcs = [_upFunc,_downFunc,_rightFunc,_leftFunc,_aFunc,_bFunc,_upRightFunc,_upLeftFunc,_downRightFunc,_downLeftFunc];
 
     for(let i=0; i<this.buttons.length; i++) this.buttons[i].setInteractive(true);
     for(let i=0; i<this.buttons.length; i++){
@@ -288,6 +321,20 @@ class Controller{
       }
     }
 
+  }
+
+  appearDiagonalButtons(){
+    this.upRight.show();
+    this.upLeft.show();
+    this.downRight.show();
+    this.downLeft.show();
+  }
+
+  hideDiagonalButtons(){
+    this.upRight.hide();
+    this.upLeft.hide();
+    this.downRight.hide();
+    this.downLeft.hide();
   }
 }
 
@@ -364,28 +411,44 @@ phina.define('MainScene', {
       this,
       () => {
         if(this.focusArrow !== null){
+          this.focusArrow.rotation = 0;
           return;
         }
         this.cursor.setIndex(this.cursor.px,this.cursor.py-1)
       }, // up
       () => {
         if(this.focusArrow !== null){
+          this.focusArrow.rotation = 180;
           return;
         }
         this.cursor.setIndex(this.cursor.px,this.cursor.py+1)
       }, // down
       () => {
         if(this.focusArrow !== null){
+          this.focusArrow.rotation = 90;
           return;
         }
         this.cursor.setIndex(this.cursor.px+1,this.cursor.py)
       }, // right
       () => {
         if(this.focusArrow !== null){
+          this.focusArrow.rotation = 270;
           return;
         }
         this.cursor.setIndex(this.cursor.px-1,this.cursor.py)
       }, // left
+      () => {
+        if(this.focusArrow !== null) this.focusArrow.rotation = 45;
+      }, // upRight
+      () => {
+        if(this.focusArrow !== null) this.focusArrow.rotation = -45;
+      }, // upLeft
+      () => {
+        if(this.focusArrow !== null) this.focusArrow.rotation = 135;
+      }, // downRight
+      () => {
+        if(this.focusArrow !== null) this.focusArrow.rotation = -135;
+      }, // downLeft
       () => {
         if(this.focusArrow === null){
 
@@ -393,12 +456,14 @@ phina.define('MainScene', {
           
           this.focusArrow = putArrow(this,this.cursor.px,this.cursor.py,this.board,(turnNum % 2 ? "red":"blue"));
           this.cursor.cursorRect.stroke = "blue";
+          this.controller.appearDiagonalButtons();
           return;
         }
 
         this.board.info[this.cursor.py][this.cursor.px] = String(String((turnNum%2))+"lu");
         this.focusArrow = null;
         this.cursor.cursorRect.stroke = "red";
+        this.controller.hideDiagonalButtons();
         turnNum++;
       }, // a
       () => {
@@ -406,6 +471,7 @@ phina.define('MainScene', {
           this.focusArrow.remove();
           this.focusArrow = null;
           this.cursor.cursorRect.stroke ="red";
+          this.controller.hideDiagonalButtons();
           return;
         }
       } // b
@@ -426,10 +492,15 @@ phina.define('MainScene', {
   update: function(app){
     //ゲームループ
     const key = app.keyboard;
-    if(key.getKeyDown("right")) this.controller.funcs[2]();
-    if(key.getKeyDown("left")) this.controller.funcs[3]();
+    
     if(key.getKeyDown("up")) this.controller.funcs[0]();
     if(key.getKeyDown("down")) this.controller.funcs[1]();
+    if(key.getKeyDown("right")) this.controller.funcs[2]();
+    if(key.getKeyDown("left")) this.controller.funcs[3]();
+    if(key.getKeyDown("up") && key.getKeyDown("right")) this.controller.funcs[6]();
+    if(key.getKeyDown("up") && key.getKeyDown("left")) this.controller.funcs[7]();
+    if(key.getKeyDown("down") && key.getKeyDown("right")) this.controller.funcs[8]();
+    if(key.getKeyDown("down") && key.getKeyDown("left")) this.controller.funcs[9]();
   }
 });
 

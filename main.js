@@ -358,18 +358,64 @@ phina.define('MainScene', {
     this.cursor = new BoardCursor(this.board,0,0);
     this.cursor.init();
 
+    this.focusArrow = null;
+
     this.controller = new Controller(
       this,
-      () => this.cursor.setIndex(this.cursor.px,this.cursor.py-1), // up
-      () => this.cursor.setIndex(this.cursor.px,this.cursor.py+1), // down
-      () => this.cursor.setIndex(this.cursor.px+1,this.cursor.py), // right
-      () => this.cursor.setIndex(this.cursor.px-1,this.cursor.py), // left
-      () => putArrow(this,this.cursor.px,this.cursor.py,this.board,(turnNum % 2 ? "red":"blue")), // a
-      helloFunc // b
+      () => {
+        if(this.focusArrow !== null){
+          return;
+        }
+        this.cursor.setIndex(this.cursor.px,this.cursor.py-1)
+      }, // up
+      () => {
+        if(this.focusArrow !== null){
+          return;
+        }
+        this.cursor.setIndex(this.cursor.px,this.cursor.py+1)
+      }, // down
+      () => {
+        if(this.focusArrow !== null){
+          return;
+        }
+        this.cursor.setIndex(this.cursor.px+1,this.cursor.py)
+      }, // right
+      () => {
+        if(this.focusArrow !== null){
+          return;
+        }
+        this.cursor.setIndex(this.cursor.px-1,this.cursor.py)
+      }, // left
+      () => {
+        if(this.focusArrow === null){
+
+          if(this.board.info[this.cursor.py][this.cursor.px] != "") return; // マスが空ではなかった
+          
+          this.focusArrow = putArrow(this,this.cursor.px,this.cursor.py,this.board,(turnNum % 2 ? "red":"blue"));
+          this.cursor.cursorRect.stroke = "blue";
+          return;
+        }
+
+        this.board.info[this.cursor.py][this.cursor.px] = String(String((turnNum%2))+"lu");
+        this.focusArrow = null;
+        this.cursor.cursorRect.stroke = "red";
+        turnNum++;
+      }, // a
+      () => {
+        if(this.focusArrow != null){
+          this.focusArrow.remove();
+          this.focusArrow = null;
+          this.cursor.cursorRect.stroke ="red";
+          return;
+        }
+      } // b
     );
 
     this.board.boardRect.setInteractive(true);
     this.board.boardRect.onpointstart = (e) => {
+      if(this.focusArrow !== null){
+        return;
+      }
       let [px,py] = this.board.convertPositionToIndex(e.pointer.x,e.pointer.y);
       this.cursor.setIndex(px,py);
     };
@@ -380,10 +426,10 @@ phina.define('MainScene', {
   update: function(app){
     //ゲームループ
     const key = app.keyboard;
-    if(key.getKeyDown("right")) this.cursor.setIndex(this.cursor.px+1,this.cursor.py);
-    if(key.getKeyDown("left")) this.cursor.setIndex(this.cursor.px-1,this.cursor.py);
-    if(key.getKeyDown("up")) this.cursor.setIndex(this.cursor.px,this.cursor.py-1);
-    if(key.getKeyDown("down")) this.cursor.setIndex(this.cursor.px,this.cursor.py+1);
+    if(key.getKeyDown("right")) this.controller.funcs[2]();
+    if(key.getKeyDown("left")) this.controller.funcs[3]();
+    if(key.getKeyDown("up")) this.controller.funcs[0]();
+    if(key.getKeyDown("down")) this.controller.funcs[1]();
   }
 });
 
@@ -405,19 +451,11 @@ function putArrow(_sceneSelf,_px,_py,_board,_type){
     console.error("存在しない矢印のタイプです");
   }
 
-  if(_board.info[_py][_px] != ""){
-    // マスが空ではなかった
-    return;
-  }
-
-  _board.info[_py][_px] = String(String((_type == "red" ? 0:1))+"lu");
-  // console.log(_board.info[_py]);
-  // console.log(_board.info);
-  
   let pos = _board.getPositionOfSquare(_px,_py);
 
   arrowSprite.addChildTo(_sceneSelf).setPosition(pos[0],pos[1]).setSize(_board.calcOneSquareLong()-30,_board.calcOneSquareLong()-30);
-  turnNum++;
+  
+  return arrowSprite;
 }
 
 function helloFunc(){

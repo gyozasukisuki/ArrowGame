@@ -32,6 +32,14 @@ class Board{
   longitudinalDivideLines = [];
   horizontalDivideLines = [];
 
+  info = []; // 矢印についての情報
+  // 情報の形式
+  // マス目の分だけ文字の要素を持った二次元配列
+  // 何もない→""(空文字)
+  // 矢印がおいてある "(type)(direction)" type -> 0 or 1 direction -> u(上) l(左) r(右) d(下) ru(右上) lu(左上) rd(右下) ld(左下)
+  // ex: "0u", "1ld", ""
+  
+
   constructor(_sceneSelf,{_width=DEFAULT_BOARD_WIDTH,_height=DEFAULT_BOARD_HEIGHT,_boardColor="white",_divideLineColor="black",_divideNum=DEFAULT_BOARD_DIVIDENUM,_divideLineWidth=DEFAULT_BOARD_DIVIDELINE_WIDTH}){
     this.sceneSelf = _sceneSelf;
     this.width = _width;
@@ -40,6 +48,13 @@ class Board{
     this.divideLineColor = _divideLineColor;
     this.divideNum = _divideNum;
     this.divideLineWidth = _divideLineWidth;
+
+    
+    for(let i=0; i<this.divideNum; i++){
+      let v = [];
+      for(let j=0; j<this.divideNum; j++) v.push("");
+      this.info.push(v);
+    }
   }
 
   setPosition(_x,_y){
@@ -349,7 +364,7 @@ phina.define('MainScene', {
       () => this.cursor.setIndex(this.cursor.px,this.cursor.py+1), // down
       () => this.cursor.setIndex(this.cursor.px+1,this.cursor.py), // right
       () => this.cursor.setIndex(this.cursor.px-1,this.cursor.py), // left
-      () => putArrow(this,this.board.getPositionOfSquare(this.cursor.px,this.cursor.py),this.board.calcOneSquareLong()-30,(turnNum % 2 ? "red":"blue")), // a
+      () => putArrow(this,this.cursor.px,this.cursor.py,this.board,(turnNum % 2 ? "red":"blue")), // a
       helloFunc // b
     );
 
@@ -358,6 +373,7 @@ phina.define('MainScene', {
       let [px,py] = this.board.convertPositionToIndex(e.pointer.x,e.pointer.y);
       this.cursor.setIndex(px,py);
     };
+    console.log(this.board.info);
     
   },
 
@@ -381,14 +397,26 @@ phina.main(function() {
   app.run();
 });
 
-function putArrow(_sceneSelf,_pos,_size,_type){
+function putArrow(_sceneSelf,_px,_py,_board,_type){
   let arrowSprite;
   if(_type == "red") arrowSprite = Sprite("arrowRed");
   else if(_type == "blue") arrowSprite = Sprite("arrowBlue");
   else{
     console.error("存在しない矢印のタイプです");
   }
-  arrowSprite.addChildTo(_sceneSelf).setPosition(_pos[0],_pos[1]).setSize(_size,_size);
+
+  if(_board.info[_py][_px] != ""){
+    // マスが空ではなかった
+    return;
+  }
+
+  _board.info[_py][_px] = String(String((_type == "red" ? 0:1))+"lu");
+  // console.log(_board.info[_py]);
+  // console.log(_board.info);
+  
+  let pos = _board.getPositionOfSquare(_px,_py);
+
+  arrowSprite.addChildTo(_sceneSelf).setPosition(pos[0],pos[1]).setSize(_board.calcOneSquareLong()-30,_board.calcOneSquareLong()-30);
   turnNum++;
 }
 

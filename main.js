@@ -24,6 +24,15 @@ const DEFAULT_CURSOR_LINE_WEIGHT = 5;
 const DEFAULT_MESSAGEDISPLAY_BACKGROUNDRECT_HEIGHT = 300;
 const DEFAULT_MESSAGEDISPLAY_BACKGROUNDRECT_WIDTH = 1400;
 
+const UP_ARROW_DEGREE = 0;
+const DOWN_ARROW_DEGREE = 180;
+const RIGHT_ARROW_DEGREE = 90;
+const LEFT_ARROW_DEGREE = 270;
+const UPRIGHT_ARROW_DEGREE = 45;
+const UPLEFT_ARROW_DEGREE = -45;
+const DOWNRIGHT_ARROW_DEGREE = 135;
+const DOWNLEFT_ARROW_DEGREE = -135;
+
 const SCREEN_WIDTH = 1600;
 const SCREEN_HEIGHT = 900;
 
@@ -411,47 +420,47 @@ phina.define('MainScene', {
       this,
       () => {
         if(this.focusArrow !== null){
-          this.focusArrow.rotation = 0;
+          this.focusArrow.rotation = UP_ARROW_DEGREE;
           return;
         }
         this.cursor.setIndex(this.cursor.px,this.cursor.py-1)
       }, // up
       () => {
         if(this.focusArrow !== null){
-          this.focusArrow.rotation = 180;
+          this.focusArrow.rotation = DOWN_ARROW_DEGREE;
           return;
         }
         this.cursor.setIndex(this.cursor.px,this.cursor.py+1)
       }, // down
       () => {
         if(this.focusArrow !== null){
-          this.focusArrow.rotation = 90;
+          this.focusArrow.rotation = RIGHT_ARROW_DEGREE;
           return;
         }
         this.cursor.setIndex(this.cursor.px+1,this.cursor.py)
       }, // right
       () => {
         if(this.focusArrow !== null){
-          this.focusArrow.rotation = 270;
+          this.focusArrow.rotation = LEFT_ARROW_DEGREE;
           return;
         }
         this.cursor.setIndex(this.cursor.px-1,this.cursor.py)
       }, // left
       () => {
-        if(this.focusArrow !== null) this.focusArrow.rotation = 45;
+        if(this.focusArrow !== null) this.focusArrow.rotation = UPRIGHT_ARROW_DEGREE;
       }, // upRight
       () => {
-        if(this.focusArrow !== null) this.focusArrow.rotation = -45;
+        if(this.focusArrow !== null) this.focusArrow.rotation = UPLEFT_ARROW_DEGREE;
       }, // upLeft
       () => {
-        if(this.focusArrow !== null) this.focusArrow.rotation = 135;
+        if(this.focusArrow !== null) this.focusArrow.rotation = DOWNRIGHT_ARROW_DEGREE;
       }, // downRight
       () => {
-        if(this.focusArrow !== null) this.focusArrow.rotation = -135;
+        if(this.focusArrow !== null) this.focusArrow.rotation = DOWNLEFT_ARROW_DEGREE;
       }, // downLeft
       () => {
         if(this.focusArrow === null){
-
+          // 矢印の向き選択画面ではない
           if(this.board.info[this.cursor.py][this.cursor.px] != "") return; // マスが空ではなかった
           
           this.focusArrow = putArrow(this,this.cursor.px,this.cursor.py,this.board,(turnNum % 2 ? "red":"blue"));
@@ -459,11 +468,23 @@ phina.define('MainScene', {
           this.controller.appearDiagonalButtons();
           return;
         }
-
-        this.board.info[this.cursor.py][this.cursor.px] = String(String((turnNum%2))+"lu");
+        // 矢印の向き確定処理
+        this.board.info[this.cursor.py][this.cursor.px] = String(String((turnNum%2))+changeDegreeToDirectionString(this.focusArrow.rotation));
         this.focusArrow = null;
         this.cursor.cursorRect.stroke = "red";
         this.controller.hideDiagonalButtons();
+        let [arrowDx,arrowDy] = getDxDyByData(this.board.info[this.cursor.py][this.cursor.px]);
+
+        // 三角形ができたかジャッジ
+        if(judgeStartAt(this.cursor.px,this.cursor.py,arrowDx,arrowDy,turnNum%2,this.board.info,[])){
+          this.gameoverMessage = Label({
+            text:"Arrow Triangle!!",
+            fontSize:80,
+            fontFamily: "DotAyu18",
+          }).addChildTo(this).setPosition(this.gridX.center(),this.gridY.center());
+          console.log("Arrow Triangle!!!");
+        }
+
         turnNum++;
       }, // a
       () => {
@@ -527,6 +548,121 @@ function putArrow(_sceneSelf,_px,_py,_board,_type){
   arrowSprite.addChildTo(_sceneSelf).setPosition(pos[0],pos[1]).setSize(_board.calcOneSquareLong()-30,_board.calcOneSquareLong()-30);
   
   return arrowSprite;
+}
+
+function changeDegreeToDirectionString(_degree){
+  let res = "";
+  switch(_degree){
+    case UP_ARROW_DEGREE:
+      res = "u";
+      break;
+    case DOWN_ARROW_DEGREE:
+      res = "d";
+      break;
+    case RIGHT_ARROW_DEGREE:
+      res = "r";
+      break;
+    case LEFT_ARROW_DEGREE:
+      res = "l";
+      break;
+    case UPRIGHT_ARROW_DEGREE:
+      res = "ur";
+      break;
+    case UPLEFT_ARROW_DEGREE:
+      res = "ul";
+      break;
+    case DOWNRIGHT_ARROW_DEGREE:
+      res = "dr";
+      break;
+    case DOWNLEFT_ARROW_DEGREE:
+      res = "dl";
+      break;
+  }
+  return res;
+
+}
+
+function isInSquareGrid(_px,_py,_grid){
+  return Boolean(_px >= 0 && _px < _grid.length && _py >= 0 && _py < _grid.length);
+}
+
+function getDxDyByData(_data){
+  const dirData = _data.substring(1);
+  let dx=0,dy=0;
+  switch(dirData[0]){
+    case "u":
+      dy = -1;
+      break;
+    case "d":
+      dy = 1;
+      break;
+    case "r":
+      dx = 1;
+      break;
+    case "l":
+      dx = -1;
+      break;
+  }
+
+  // console.log(_data,dx,dy);
+  if(dirData.length === 1) return [dx,dy];
+
+  if(dirData[1] === "r") dx = 1;
+  else if(dirData[1] === "l") dx = -1;
+  // console.log(_data,dx,dy);
+  return [dx,dy];
+}
+
+// px,py-> 矢印をおいた場所 dx,dy -> 矢印の向き(=進む向き用) type->矢印の種類(turnNum%2) info -> 矢印とかの情報を持ったBoardクラスの持つ二次元配列 tripos -> 通ってきた矢印の[px,py]の配列
+function judgeStartAt(_px,_py,_dx,_dy,_type,_info,_tripos){
+  let ans = false;
+  
+  // 何も置かれていないマス
+  if(_info[_py][_px] == ""){
+    let nx = _px+_dx;
+    let ny = _py+_dy;
+
+    if(isInSquareGrid(nx,ny,_info)) return ans |= judgeStartAt(nx,ny,_dx,_dy,_type,_info,_tripos);
+    return ans;
+  }
+
+  // 自分とはタイプの異なる矢印
+  if(_info[_py][_px][0] !== String(_type)) return ans;
+
+  // 自分と同じタイプの矢印がおいてある
+  if(_tripos.length < 3){
+    // まだ通ってきた矢印が3つに満たない
+    
+    //ここの矢印を使う(方向転換)場合と使わない場合どちらも試す
+    //使わない場合
+    if(_tripos.length >= 1){
+      let nx = _px+_dx;
+      let ny = _py+_dy;
+      
+      if(isInSquareGrid(nx,ny,_info)) ans |= judgeStartAt(nx,ny,_dx,_dy,_type,_info,_tripos);
+    }   
+    
+    // 使う場合
+    
+    _tripos.push([_px,_py]);
+
+    let [ndx,ndy] = getDxDyByData(_info[_py][_px]); // _dx,_dyの調節
+    
+    if(ndx === _dx*-1 && ndy === _dy*-1) return ans;
+    nx = _px+ndx;
+    ny = _py+ndy;
+
+    if(isInSquareGrid(nx,ny,_info)) ans |= judgeStartAt(nx,ny,ndx,ndy,_type,_info,_tripos);
+    return ans;
+  }
+
+  if(_tripos.length == 3 && _tripos[0][0] == _px && _tripos[0][1] == _py){
+    // 帰ってきた⇔成立条件を満たした三角形がある
+    // console.log("found Triangle!");
+    return ans=true;
+  }
+  
+  return ans;
 }
 
 function helloFunc(){

@@ -36,6 +36,8 @@ const DOWNLEFT_ARROW_DEGREE = -135;
 const SCREEN_WIDTH = 1600;
 const SCREEN_HEIGHT = 900;
 
+isGoTitle = false;
+
 class Board{
   boardRect; // main board object
   longitudinalDivideLines = [];
@@ -399,10 +401,111 @@ const ASSETS = {
   },
 }
 
+phina.define('TitleScene', {
+  superClass: 'DisplayScene',
+  
+  init: function(option) {
+    this.superInit(option);
+    this.superInit({
+      width:SCREEN_WIDTH,
+      height:SCREEN_HEIGHT,
+    });
+    this.backgroundColor = "skyblue";
+
+    this.titleLabel = Label({
+      text:"矢印トライアングルス",
+      stroke: "black",
+      fill: "white",
+      fontSize:80,
+      strokeWidth: 4,
+    }).addChildTo(this).setPosition(this.gridX.center(),this.gridY.center()-80);
+
+    this.startButton = RectangleShape({
+      width:250,
+      height:50,
+      stroke:"black",
+      fill:"white",
+    }).addChildTo(this).setPosition(this.gridX.center(),this.gridY.center()+30);
+
+    this.startLabel = Label({
+      text:"スタート",
+      fill: "black",
+      fontSize:20,
+    }).addChildTo(this).setPosition(this.startButton.x,this.startButton.y);
+
+  },
+  update: function(app){
+    this.startButton.setInteractive(true);
+
+    this.startButton.onpointstart = (e) => {
+      this.startButton.fill = "black";
+      this.startLabel.fill = "white";
+    };
+
+    this.startButton.onpointend = (e) => {
+      this.app.replaceScene(MainScene());
+    }
+  }
+});
+
+phina.define('GamePoseScene', {
+  superClass: 'DisplayScene',
+  init: function(option) {
+    this.superInit(option);
+    this.superInit({
+      width:SCREEN_WIDTH,
+      height:SCREEN_HEIGHT,
+    });
+    this.backgroundColor = "rgba(0,0,0,0.6)";
+
+    this.goTitleButton = RectangleShape({
+      width:300,
+      height:80,
+      stroke:"white",
+      fill:"black",
+    }).addChildTo(this).setPosition(this.gridX.center()+200,this.gridY.center());
+
+    this.goTitleLabel = Label({
+      text:"タイトルへ",
+      fontSize:40,
+      fill:"yellow",
+    }).addChildTo(this).setPosition(this.goTitleButton.x,this.goTitleButton.y);
+
+    this.goTitleButton.setInteractive(true);
+    this.goTitleButton.onpointstart = (e) => {
+      isGoTitle = true;
+      this.exit();
+    }
+
+    this.backGameButton = RectangleShape({
+      width:300,
+      height:80,
+      stroke:"white",
+      fill:"black",
+    }).addChildTo(this).setPosition(this.gridX.center()-200,this.gridY.center());
+
+    this.backGameLabel = Label({
+      text:"戻る",
+      fontSize:40,
+      fill:"white",
+    }).addChildTo(this).setPosition(this.backGameButton.x,this.backGameButton.y);
+
+    this.backGameButton.setInteractive(true);
+
+    this.backGameButton.onpointstart = (e) => {
+      this.exit();
+    }
+  }
+});
+
 phina.define('MainScene', {
   superClass: 'DisplayScene',
   init: function(option) {
     this.superInit(option); // 親クラス（DisplayScene）のコンストラクタを呼ぶ
+    this.superInit({
+      width:SCREEN_WIDTH,
+      height:SCREEN_HEIGHT,
+    });
     this.backgroundColor = "green";
     // let boardRect = createBoard(this,{});
     this.board = new Board(this,{});
@@ -508,9 +611,31 @@ phina.define('MainScene', {
     };
     console.log(this.board.info);
     
+    this.poseButton = RectangleShape({
+      width:140,
+      height:60,
+      stroke: "white",
+      fill: "black",
+
+    }).addChildTo(this).setPosition(SCREEN_WIDTH-160,0+80);
+
+    this.poseLabel = Label({
+      text: "Exit",
+      fill: "white",
+    }).addChildTo(this).setPosition(this.poseButton.x,this.poseButton.y);
+
+    this.poseButton.setInteractive(true);
+    this.poseButton.onpointstart = (e) => {
+      this.app.pushScene(GamePoseScene());
+    }
   },
 
   update: function(app){
+    if(isGoTitle){
+      isGoTitle = false;
+      this.app.replaceScene(TitleScene());
+    }
+
     //ゲームループ
     const key = app.keyboard;
     
@@ -527,7 +652,19 @@ phina.define('MainScene', {
 
 phina.main(function() {
   var app = GameApp({
-    startLabel: 'main',
+    startLabel: 'title',
+    scenes:[
+      {
+        className: "TitleScene",
+        label: "title",
+        nextLabel: "main",
+      },
+      {
+        className: "MainScene",
+        label:"main",
+        nextLabel: "title",
+      },
+    ],
     width:SCREEN_WIDTH,
     height:SCREEN_HEIGHT,
     assets:ASSETS,

@@ -397,8 +397,15 @@ let turnNum = 0;
 const ASSETS = {
   image:{
     'arrowRed':"./assets/yajirushiRed_top.png",
-    'arrowBlue':"./assets/yajirushiBlue_top.png"
+    'arrowBlue':"./assets/yajirushiBlue_top.png",
+    
   },
+  sound:{
+    'bgm_water':"./assets/Water.m4a",
+    'button_input':"/assets/button_input.mp3",
+    'cursor_move':"/assets/cursor_move.mp3",
+    'arrow_put':"/assets/arrow_put.mp3",
+  }
 }
 
 phina.define('TitleScene', {
@@ -433,6 +440,7 @@ phina.define('TitleScene', {
       fontSize:20,
     }).addChildTo(this).setPosition(this.startButton.x,this.startButton.y);
 
+    SoundManager.playMusic("bgm_water");
   },
   update: function(app){
     this.startButton.setInteractive(true);
@@ -440,10 +448,12 @@ phina.define('TitleScene', {
     this.startButton.onpointstart = (e) => {
       this.startButton.fill = "black";
       this.startLabel.fill = "white";
+      SoundManager.play("button_input");
     };
 
     this.startButton.onpointend = (e) => {
       this.app.replaceScene(MainScene());
+      
     }
   }
 });
@@ -474,6 +484,8 @@ phina.define('GamePoseScene', {
     this.goTitleButton.setInteractive(true);
     this.goTitleButton.onpointstart = (e) => {
       isGoTitle = true;
+      SoundManager.play("button_input");
+      SoundManager.stopMusic();
       this.exit();
     }
 
@@ -493,6 +505,7 @@ phina.define('GamePoseScene', {
     this.backGameButton.setInteractive(true);
 
     this.backGameButton.onpointstart = (e) => {
+      SoundManager.play("button_input");
       this.exit();
     }
   }
@@ -526,28 +539,32 @@ phina.define('MainScene', {
           this.focusArrow.rotation = UP_ARROW_DEGREE;
           return;
         }
-        this.cursor.setIndex(this.cursor.px,this.cursor.py-1)
+        this.cursor.setIndex(this.cursor.px,this.cursor.py-1);
+        SoundManager.play("cursor_move");
       }, // up
       () => {
         if(this.focusArrow !== null){
           this.focusArrow.rotation = DOWN_ARROW_DEGREE;
           return;
         }
-        this.cursor.setIndex(this.cursor.px,this.cursor.py+1)
+        this.cursor.setIndex(this.cursor.px,this.cursor.py+1);
+        SoundManager.play("cursor_move");
       }, // down
       () => {
         if(this.focusArrow !== null){
           this.focusArrow.rotation = RIGHT_ARROW_DEGREE;
           return;
         }
-        this.cursor.setIndex(this.cursor.px+1,this.cursor.py)
+        this.cursor.setIndex(this.cursor.px+1,this.cursor.py);
+        SoundManager.play("cursor_move");
       }, // right
       () => {
         if(this.focusArrow !== null){
           this.focusArrow.rotation = LEFT_ARROW_DEGREE;
           return;
         }
-        this.cursor.setIndex(this.cursor.px-1,this.cursor.py)
+        this.cursor.setIndex(this.cursor.px-1,this.cursor.py);
+        SoundManager.play("cursor_move");
       }, // left
       () => {
         if(this.focusArrow !== null) this.focusArrow.rotation = UPRIGHT_ARROW_DEGREE;
@@ -577,6 +594,8 @@ phina.define('MainScene', {
         this.cursor.cursorRect.stroke = "red";
         this.controller.hideDiagonalButtons();
         let [arrowDx,arrowDy] = getDxDyByData(this.board.info[this.cursor.py][this.cursor.px]);
+
+        SoundManager.play("arrow_put");
 
         // 三角形ができたかジャッジ
         if(judgeStartAt(this.cursor.px,this.cursor.py,arrowDx,arrowDy,turnNum%2,this.board.info,[])){
@@ -608,7 +627,9 @@ phina.define('MainScene', {
       }
       let [px,py] = this.board.convertPositionToIndex(e.pointer.x,e.pointer.y);
       this.cursor.setIndex(px,py);
+      SoundManager.play("cursor_move");
     };
+
     console.log(this.board.info);
     
     this.poseButton = RectangleShape({
@@ -626,6 +647,7 @@ phina.define('MainScene', {
 
     this.poseButton.setInteractive(true);
     this.poseButton.onpointstart = (e) => {
+      SoundManager.play("button_input");
       this.app.pushScene(GamePoseScene());
     }
   },

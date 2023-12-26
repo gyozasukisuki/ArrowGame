@@ -402,9 +402,9 @@ const ASSETS = {
   },
   sound:{
     'bgm_water':"./assets/Water.m4a",
-    'button_input':"/assets/button_input.mp3",
-    'cursor_move':"/assets/cursor_move.mp3",
-    'arrow_put':"/assets/arrow_put.mp3",
+    'button_input':"./assets/button_input.mp3",
+    'cursor_move':"./assets/cursor_move.mp3",
+    'arrow_put':"./assets/arrow_put.mp3",
   }
 }
 
@@ -696,22 +696,6 @@ phina.main(function() {
   });
 
   app.run();
-
-  var event = "touchstart";
-  var dom = app.domElement;
-  dom.addEventListener(event, (function() {
-    return function f() {
-      var context = phina.asset.Sound.getAudioContext();
-      var buf = context.createBuffer(1, 1, 22050);
-      var src = context.createBufferSource();
-      src.buffer = buf;
-      src.connect(context.destination);
-      src.start(0);
-
-      dom.removeEventListener(event, f, false)
-    }
-  
-  }));
 });
 
 function putArrow(_sceneSelf,_px,_py,_board,_type){

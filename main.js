@@ -440,6 +440,9 @@ phina.define('TitleScene', {
       fontSize:20,
     }).addChildTo(this).setPosition(this.startButton.x,this.startButton.y);
 
+    
+    
+
     SoundManager.playMusic("bgm_water");
   },
   update: function(app){
@@ -691,7 +694,24 @@ phina.main(function() {
     height:SCREEN_HEIGHT,
     assets:ASSETS,
   });
+
   app.run();
+
+  var event = "touchstart";
+  var dom = app.domElement;
+  dom.addEventListener(event, (function() {
+    return function f() {
+      var context = phina.asset.Sound.getAudioContext();
+      var buf = context.createBuffer(1, 1, 22050);
+      var src = context.createBufferSource();
+      src.buffer = buf;
+      src.connect(context.destination);
+      src.start(0);
+
+      dom.removeEventListener(event, f, false)
+    }
+  
+  }));
 });
 
 function putArrow(_sceneSelf,_px,_py,_board,_type){
